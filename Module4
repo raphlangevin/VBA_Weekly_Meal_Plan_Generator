@@ -1,0 +1,80 @@
+Sub ExtractDaysAndAssignWeeks()
+    Dim wsMealPlanner As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim daysOfWeek As Variant
+    Dim themeText As String
+    Dim weekDay As Variant
+    Dim currentWeek As Long
+    Dim weekDaysUsed As Collection
+    Dim dayFound As Boolean
+
+    ' Set the worksheet
+    Set wsMealPlanner = ThisWorkbook.Sheets("Meal Planner")
+    
+    ' Ensure the worksheet has data
+    lastRow = wsMealPlanner.Cells(wsMealPlanner.Rows.Count, 3).End(xlUp).Row ' Column C contains Theme
+    If lastRow <= 1 Then
+        MsgBox "No data found in 'Meal Planner'.", vbExclamation
+        Exit Sub
+    End If
+
+    ' List of days to search for
+    daysOfWeek = Array("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    
+    ' Add headers in Columns E and F
+    wsMealPlanner.Cells(1, 5).Value = "Day"
+    wsMealPlanner.Cells(1, 6).Value = "Week"
+
+    ' Initialize variables
+    currentWeek = 1
+    Set weekDaysUsed = New Collection ' Keeps track of days used in the current week
+
+    ' Loop through each row in the Theme column
+    For i = 2 To lastRow ' Start from row 2 to skip header
+        themeText = wsMealPlanner.Cells(i, 3).Value ' Column C: Theme
+        dayFound = False
+
+        ' Check if Theme contains any day of the week
+        For Each weekDay In daysOfWeek
+            If InStr(1, themeText, weekDay, vbTextCompare) > 0 Then
+                wsMealPlanner.Cells(i, 5).Value = weekDay ' Paste the day into Column E
+                dayFound = True
+
+                ' If we encounter a second "Tuesday", increment the week
+                If weekDay = "Tuesday" Then
+                    If weekDaysUsed.Count > 0 Then
+                        currentWeek = currentWeek + 1
+                        Set weekDaysUsed = New Collection ' Reset for the new week
+                    End If
+                End If
+
+                ' Add the day to the collection for the current week
+                On Error Resume Next
+                weekDaysUsed.Add weekDay, CStr(weekDay)
+                On Error GoTo 0
+
+                ' Assign the week number to Column F
+                wsMealPlanner.Cells(i, 6).Value = currentWeek
+
+                ' If all days of the week (Tuesday to Sunday) are found, start a new week
+                If weekDaysUsed.Count = 6 Then
+                    currentWeek = currentWeek + 1
+                    Set weekDaysUsed = New Collection ' Reset for the new week
+                End If
+
+                Exit For
+            End If
+        Next weekDay
+
+        ' If no day is found, leave Columns E and F blank
+        If Not dayFound Then
+            wsMealPlanner.Cells(i, 5).Value = ""
+            wsMealPlanner.Cells(i, 6).Value = ""
+        End If
+    Next i
+
+    ' Notify the user
+    MsgBox "Days and Weeks have been successfully extracted and assigned!", vbInformation
+End Sub
+
