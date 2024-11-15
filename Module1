@@ -1,0 +1,41 @@
+Sub AddSheetsAndImportCSV()
+    Dim wb As Workbook
+    Dim wsRecipes As Worksheet
+    Dim wsMealPlanner As Worksheet
+    Dim csvFilePath As String
+    
+    ' Define file paths
+    csvFilePath = "C:\Users\rlangevin\Desktop\WIP\Food\VBA_Weekly_Meal_Plan_Generator\Recipe.csv"
+    Set wb = Workbooks.Open("C:\Users\rlangevin\Desktop\WIP\Food\VBA_Weekly_Meal_Plan_Generator\Weekly_Meal_Plan_Generator.xlsm")
+    
+    ' Add the "Recipes" sheet and import the CSV file
+    On Error Resume Next
+    Set wsRecipes = wb.Sheets("Recipes")
+    On Error GoTo 0
+    If wsRecipes Is Nothing Then
+        Set wsRecipes = wb.Sheets.Add
+        wsRecipes.Name = "Recipes"
+    End If
+    
+    ' Import the CSV file into the "Recipes" sheet
+    With wsRecipes.QueryTables.Add(Connection:="TEXT;" & csvFilePath, Destination:=wsRecipes.Range("A1"))
+        .TextFileParseType = xlDelimited
+        .TextFileCommaDelimiter = True
+        .TextFileColumnDataTypes = Array(1) ' Treat all columns as text
+        .Refresh BackgroundQuery:=False
+    End With
+
+    ' Add the "Meal Planner" sheet
+    On Error Resume Next
+    Set wsMealPlanner = wb.Sheets("Meal Planner")
+    On Error GoTo 0
+    If wsMealPlanner Is Nothing Then
+        Set wsMealPlanner = wb.Sheets.Add
+        wsMealPlanner.Name = "Meal Planner"
+    End If
+
+    ' Save and close the workbook
+    wb.Save
+    MsgBox "CSV file imported, and both sheets are ready!", vbInformation
+End Sub
+
