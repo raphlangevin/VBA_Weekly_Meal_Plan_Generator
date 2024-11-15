@@ -1,0 +1,53 @@
+Sub FilterAndCopyToMealPlanner()
+    Dim wsRecipes As Worksheet
+    Dim wsMealPlanner As Worksheet
+    Dim lastRow As Long
+    Dim targetRow As Long
+    Dim i As Long
+    
+    ' Set the worksheets
+    On Error Resume Next
+    Set wsRecipes = ThisWorkbook.Sheets("Recipes")
+    Set wsMealPlanner = ThisWorkbook.Sheets("Meal Planner")
+    On Error GoTo 0
+    
+    ' Ensure both sheets exist
+    If wsRecipes Is Nothing Then
+        MsgBox "The 'Recipes' sheet does not exist. Please import the CSV first.", vbExclamation
+        Exit Sub
+    End If
+    If wsMealPlanner Is Nothing Then
+        MsgBox "The 'Meal Planner' sheet does not exist. Please create it first.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Clear existing data in the "Meal Planner" sheet
+    wsMealPlanner.Cells.Clear
+    wsMealPlanner.Range("A1:D1").Value = Array("Name", "Type of Food", "Theme", "Cuisine")
+    
+    ' Find the last row in the "Recipes" sheet
+    lastRow = wsRecipes.Cells(wsRecipes.Rows.Count, 1).End(xlUp).Row
+    
+    ' Initialize the target row for the "Meal Planner" sheet
+    targetRow = 2
+    
+    ' Loop through the "Recipes" sheet to filter and copy data
+    For i = 2 To lastRow ' Assuming the first row contains headers
+        If Trim(wsRecipes.Cells(i, 3).Value) <> "" And _
+           Trim(wsRecipes.Cells(i, 4).Value) <> "" And _
+           Trim(wsRecipes.Cells(i, 5).Value) <> "" Then
+           
+            ' Copy the Name, Type of Food, Theme, and Cuisine columns to the Meal Planner sheet
+            wsMealPlanner.Cells(targetRow, 1).Value = wsRecipes.Cells(i, 1).Value ' Name (Column A)
+            wsMealPlanner.Cells(targetRow, 2).Value = wsRecipes.Cells(i, 3).Value ' Type of Food (Column C)
+            wsMealPlanner.Cells(targetRow, 3).Value = wsRecipes.Cells(i, 4).Value ' Theme (Column D)
+            wsMealPlanner.Cells(targetRow, 4).Value = wsRecipes.Cells(i, 5).Value ' Cuisine (Column E)
+            targetRow = targetRow + 1
+        End If
+    Next i
+    
+    ' Notify the user
+    MsgBox "Filtered data has been successfully copied to the 'Meal Planner' sheet!", vbInformation
+End Sub
+
+
