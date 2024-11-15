@@ -1,0 +1,74 @@
+Sub AlternateThemesInMealPlanner()
+    Dim wsMealPlanner As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim themesDict As Object
+    Dim themeKeys As Collection
+    Dim themeRowCounter() As Long
+    Dim currentThemeIndex As Long
+    Dim sortedData As Collection
+    Dim outputRow As Long
+
+    ' Set the worksheet
+    Set wsMealPlanner = ThisWorkbook.Sheets("Meal Planner")
+    
+    ' Ensure the worksheet has data
+    lastRow = wsMealPlanner.Cells(wsMealPlanner.Rows.Count, 1).End(xlUp).Row
+    If lastRow <= 1 Then
+        MsgBox "No data found in 'Meal Planner'.", vbExclamation
+        Exit Sub
+    End If
+
+    ' Initialize objects
+    Set themesDict = CreateObject("Scripting.Dictionary")
+    Set themeKeys = New Collection
+    Set sortedData = New Collection
+
+    ' Read data and group rows by Theme
+    For i = 2 To lastRow
+        Dim theme As String
+        theme = wsMealPlanner.Cells(i, 3).Value ' Column D contains Theme
+        If Not themesDict.exists(theme) Then
+            themesDict.Add theme, New Collection
+            themeKeys.Add theme
+        End If
+        themesDict(theme).Add Array(wsMealPlanner.Cells(i, 1).Value, _
+                                    wsMealPlanner.Cells(i, 2).Value, _
+                                    wsMealPlanner.Cells(i, 3).Value, _
+                                    wsMealPlanner.Cells(i, 4).Value)
+    Next i
+
+    ' Initialize counters for each theme
+    ReDim themeRowCounter(1 To themesDict.Count)
+    currentThemeIndex = 1
+
+    ' Distribute rows alternately based on Themes
+    Do While sortedData.Count < (lastRow - 1)
+        If themeRowCounter(currentThemeIndex) < themesDict(themeKeys(currentThemeIndex)).Count Then
+            Dim rowData As Variant
+            rowData = themesDict(themeKeys(currentThemeIndex))(themeRowCounter(currentThemeIndex) + 1)
+            sortedData.Add rowData
+            themeRowCounter(currentThemeIndex) = themeRowCounter(currentThemeIndex) + 1
+        End If
+        ' Move to the next theme (cycle through themes)
+        currentThemeIndex = currentThemeIndex Mod themeKeys.Count + 1
+    Loop
+
+    ' Clear existing data in Meal Planner
+    wsMealPlanner.Range("A2:D" & lastRow).ClearContents
+
+    ' Write sorted data back to Meal Planner
+    outputRow = 2
+    For Each rowData In sortedData
+        wsMealPlanner.Cells(outputRow, 1).Value = rowData(0) ' Name
+        wsMealPlanner.Cells(outputRow, 2).Value = rowData(1) ' Type of Food
+        wsMealPlanner.Cells(outputRow, 3).Value = rowData(2) ' Theme
+        wsMealPlanner.Cells(outputRow, 4).Value = rowData(3) ' Cuisine
+        outputRow = outputRow + 1
+    Next rowData
+
+    ' Notify the user
+    MsgBox "Themes have been alternated successfully!", vbInformation
+End Sub
+
+
